@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modify/Remove Guide</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        background-image: url("admin-management bg.png");
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      .container {
+        background: transparent;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 90%;
+        max-width: 800px;
+        overflow-x: auto;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        color: #dbdada;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+        color: #c7c4c4;
+      }
+
+      th {
+        background-color: #333;
+        color: #fff;
+      }
+
+      .delete-button {
+        background-color: #ee2020;
+        color: #fff;
+        border: none;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .delete-button:hover {
+        background-color: #cc0000;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: transparent;
+        padding: 20px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #c7c4c4;
+      }
+
+      input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+        background-color: rgb(177, 180, 183);
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background-color: #32da4b;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        background-color: #12653b;
+      }
+
+      #back {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background-color: #ee2020;
+        color: #fff;
+        font-size: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 10%;
+      }
+
+      #back:hover {
+        background-color: #cc0000;
+      }
+
+      #error-message {
+        color: red;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Modify/Remove Guide</h1>
+      <table id="guidesTable">
+        <thead>
+          <tr>
+            <th>Guide ID</th>
+            <th>User ID</th>
+            <th>Joining Date</th>
+            <th>Profession</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Guides will be populated here -->
+        </tbody>
+      </table>
+
+      <form id="updateGuideForm">
+        <label for="guideId">Guide ID</label>
+        <input type="text" id="guideId" name="guideId" required />
+
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" name="userId" required />
+
+        <label for="joiningDate">Joining Date</label>
+        <input type="date" id="joiningDate" name="joiningDate" required />
+
+        <label for="photo">Photo (optional)</label>
+        <input type="file" id="photo" name="photo" />
+
+        <label for="profession">Profession</label>
+        <input type="text" id="profession" name="profession" required />
+
+        <button type="submit">Update Guide</button>
+      </form>
+      <a href="admin-dashboard.html" id="back">Back</a>
+      <div id="error-message"></div>
+    </div>
+
+    <script>
+      async function fetchGuides() {
+        try {
+          const response = await fetch(
+            "https://localhost:7171/api/Guides/admin",
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const guides = await response.json();
+            populateGuidesTable(guides);
+          } else {
+            console.error("Failed to fetch guides");
+          }
+        } catch (error) {
+          console.error("Error fetching guides:", error);
+        }
+      }
+
+      function populateGuidesTable(guides) {
+        const tbody = document.querySelector("#guidesTable tbody");
+        tbody.innerHTML = "";
+
+        guides.forEach((guide) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${guide.guideId}</td>
+            <td>${guide.userId}</td>
+            <td>${guide.joiningDate}</td>
+            <td>${guide.profession}</td>
+            <td><button class="delete-button" onclick="deleteGuide('${guide.guideId}')">Delete</button></td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      }
+
+      async function deleteGuide(guideId) {
+        if (!confirm("Are you sure you want to delete this guide?")) return;
+
+        try {
+          const response = await fetch(
+            `https://localhost:7171/api/Guides/${guideId}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            alert("Guide deleted successfully!");
+            fetchGuides();
+          } else {
+            console.error("Failed to delete guide");
+          }
+        } catch (error) {
+          console.error("Error deleting guide:", error);
+        }
+      }
+
+      async function updateGuide(event) {
+        event.preventDefault();
+
+        const guideId = document.getElementById("guideId").value;
+        const userId = document.getElementById("userId").value;
+        const joiningDate = document.getElementById("joiningDate").value;
+        const photoFile = document.getElementById("photo").files[0];
+        const profession = document.getElementById("profession").value;
+
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "http://127.0.0.1:5500/adminLogin.html";
+          return;
+        }
+
+        let photo = null;
+        if (photoFile) {
+          photo = await convertToBase64(photoFile);
+        }
+
+        await sendGuideData({
+          guideId,
+          userId,
+          joiningDate,
+          photo,
+          profession,
+        });
+      }
+
+      async function sendGuideData(guideData) {
+        try {
+          const response = await fetch(
+            `https://localhost:7171/api/Guides/${guideData.guideId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+              body: JSON.stringify(guideData),
+            }
+          );
+
+          if (response.ok) {
+            alert("Guide updated successfully!");
+            document.getElementById("updateGuideForm").reset();
+            fetchGuides();
+          } else {
+            const data = await response.json();
+            document.getElementById("error-message").textContent =
+              data.message || "Failed to update guide";
+          }
+        } catch (error) {
+          console.error("Error updating guide:", error);
+          document.getElementById("error-message").textContent =
+            "An error occurred. Please try again later.";
+        }
+      }
+
+      async function convertToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            resolve(event.target.result.split(",")[1]); // Get the base64 part of the data URL
+          };
+          reader.onerror = function (error) {
+            reject(error);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Add event listener to the form
+      document
+        .getElementById("updateGuideForm")
+        .addEventListener("submit", updateGuide);
+
+      // Fetch guides on page load
+      fetchGuides();
+    </script>
+  </body>
+</html>

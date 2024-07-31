@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Events</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+
+        background-image: url("Event management bg.png");
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      .container {
+        text-align: center;
+        background: transparent;
+        border-radius: 8px;
+        box-shadow: none;
+        padding: 20px;
+        width: 80%;
+        max-width: 600px;
+      }
+
+      h1 {
+        color: #333;
+        padding-bottom: 20px;
+      }
+
+      .options {
+        display: grid;
+        gap: 25px;
+      }
+
+      .option {
+        display: block;
+        text-decoration: none;
+        color: #fff;
+        background-color: #3d5773;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 18px;
+        transition: background-color 0.3s;
+      }
+
+      .option:hover {
+        background-color: #0056b3;
+      }
+      #back {
+        background-color: #ee2020;
+      }
+      #back:hover {
+        background-color: #792222;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Manage Events</h1>
+      <div class="options">
+        <a href="add-event.html" class="option">Add an Event</a>
+        <a href="update-event.html" class="option">Update an Event</a>
+        <a href="delete-event.html" class="option">Delete an Event</a>
+        <a href="view-events.html" class="option">See All Events</a>
+        <a href="admin-dashboard.html" class="option" id="back">< Back</a>
+      </div>
+    </div>
+  </body>
+</html>

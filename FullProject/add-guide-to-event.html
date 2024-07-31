@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Guide to Event</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        background-image: url("admin-management bg.png");
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      .container {
+        background: transparent;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 90%;
+        max-width: 800px;
+        overflow-x: auto;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        color: #dbdada;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      h2 {
+        color: #c5c0c0;
+        margin-bottom: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+        color: #c7c4c4;
+      }
+
+      th {
+        background-color: #333;
+        color: #fff;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: transparent;
+        padding: 20px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #c7c4c4;
+      }
+
+      input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+        background-color: rgb(177, 180, 183);
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background-color: #2abe40;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        background-color: #12653b;
+      }
+
+      #back {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background-color: #ee2020;
+        color: #fff;
+        font-size: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 10%;
+      }
+
+      #back:hover {
+        background-color: #cc0000;
+      }
+
+      #error-message {
+        color: red;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Add Guide to Event</h1>
+      <h2>Guides</h2>
+      <table id="guidesTable">
+        <thead>
+          <tr>
+            <th>Guide ID</th>
+            <th>User ID</th>
+            <th>Joining Date</th>
+            <th>Photo</th>
+            <th>Profession</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Guides will be populated here -->
+        </tbody>
+      </table>
+
+      <h2>Events</h2>
+      <table id="eventsTable">
+        <thead>
+          <tr>
+            <th>Event ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Destination</th>
+            <th>Date From</th>
+            <th>Date To</th>
+            <th>Cost</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Events will be populated here -->
+        </tbody>
+      </table>
+
+      <h2>Event Guides</h2>
+      <table id="eventGuidesTable">
+        <thead>
+          <tr>
+            <th>Event Guide ID</th>
+            <th>Event ID</th>
+            <th>Guide ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Event Guides will be populated here -->
+        </tbody>
+      </table>
+
+      <form id="addGuideToEventForm">
+        <label for="eventId">Event ID</label>
+        <input type="text" id="eventId" name="eventId" required />
+
+        <label for="guideId">Guide ID</label>
+        <input type="text" id="guideId" name="guideId" required />
+
+        <button type="submit">Add Guide to Event</button>
+      </form>
+      <a href="admin-dashboard.html" id="back">Back</a>
+      <div id="error-message"></div>
+    </div>
+
+    <script>
+      async function fetchGuides() {
+        try {
+          const response = await fetch(
+            "https://localhost:7171/api/Guides/admin",
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const guides = await response.json();
+            populateGuidesTable(guides);
+          } else {
+            console.error("Failed to fetch guides");
+          }
+        } catch (error) {
+          console.error("Error fetching guides:", error);
+        }
+      }
+
+      function populateGuidesTable(guides) {
+        const tbody = document.querySelector("#guidesTable tbody");
+        tbody.innerHTML = "";
+
+        guides.forEach((guide) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${guide.guideId}</td>
+            <td>${guide.userId}</td>
+            <td>${guide.joiningDate}</td>
+            <td>${
+              guide.photo
+                ? `<img src="${guide.photo}" alt="Photo" width="50" height="50"/>`
+                : "N/A"
+            }</td>
+            <td>${guide.profession}</td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      }
+
+      async function fetchEvents() {
+        try {
+          const response = await fetch(
+            "https://localhost:7171/api/Events/admin",
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const events = await response.json();
+            populateEventsTable(events);
+          } else {
+            console.error("Failed to fetch events");
+          }
+        } catch (error) {
+          console.error("Error fetching events:", error);
+        }
+      }
+
+      function populateEventsTable(events) {
+        const tbody = document.querySelector("#eventsTable tbody");
+        tbody.innerHTML = "";
+
+        events.forEach((event) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${event.eventId}</td>
+            <td>${event.name}</td>
+            <td>${event.description}</td>
+            <td>${event.destination}</td>
+            <td>${event.dateFrom}</td>
+            <td>${event.dateTo}</td>
+            <td>${event.cost}</td>
+            <td>${event.status}</td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      }
+
+      async function fetchEventGuides() {
+        try {
+          const response = await fetch(
+            "https://localhost:7171/api/EventGuide",
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const eventGuides = await response.json();
+            populateEventGuidesTable(eventGuides);
+          } else {
+            console.error("Failed to fetch event guides");
+          }
+        } catch (error) {
+          console.error("Error fetching event guides:", error);
+        }
+      }
+
+      function populateEventGuidesTable(eventGuides) {
+        const tbody = document.querySelector("#eventGuidesTable tbody");
+        tbody.innerHTML = "";
+
+        eventGuides.forEach((eventGuide) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${eventGuide.eventGuideId}</td>
+            <td>${eventGuide.eventId}</td>
+            <td>${eventGuide.guideId}</td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      }
+
+      async function addGuideToEvent(event) {
+        event.preventDefault();
+
+        const eventId = document.getElementById("eventId").value;
+        const guideId = document.getElementById("guideId").value;
+
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "http://127.0.0.1:5500/adminLogin.html";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "https://localhost:7171/api/EventGuide",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                eventId,
+                guideId,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            alert("Guide added to event successfully!");
+            document.getElementById("addGuideToEventForm").reset();
+            fetchEventGuides();
+          } else {
+            const data = await response.json();
+            document.getElementById("error-message").textContent =
+              data.message || "Failed to add guide to event";
+          }
+        } catch (error) {
+          console.error("Error adding guide to event:", error);
+          document.getElementById("error-message").textContent =
+            "An error occurred. Please try again later.";
+        }
+      }
+
+      // Add event listener to the form
+      document
+        .getElementById("addGuideToEventForm")
+        .addEventListener("submit", addGuideToEvent);
+
+      // Fetch guides, events, and event guides on page load
+      fetchGuides();
+      fetchEvents();
+      fetchEventGuides();
+    </script>
+  </body>
+</html>

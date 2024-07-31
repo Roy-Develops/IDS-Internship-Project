@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>IDS Activity Club</title>
+    <meta content="" name="description" />
+    <meta content="" name="keywords" />
+
+    <!-- Favicons -->
+    <link href="assets/img/favicon.png" rel="icon" />
+    <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon" />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <!-- Vendor CSS Files -->
+    <link
+      href="assets/vendor/bootstrap/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="assets/vendor/bootstrap-icons/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link href="assets/vendor/aos/aos.css" rel="stylesheet" />
+    <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet" />
+    <link
+      href="assets/vendor/glightbox/css/glightbox.min.css"
+      rel="stylesheet"
+    />
+
+    <link href="assets/css/main.css" rel="stylesheet" />
+    <link href="assets/css/events.css" rel="stylesheet" />
+    <link href="assets/css/profile.css" rel="stylesheet" />
+  </head>
+
+  <body class="index-page">
+    <header id="header" class="header d-flex align-items-center fixed-top">
+      <div
+        class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between"
+      >
+        <a
+          href="index.html"
+          class="logo d-flex align-items-center me-auto me-lg-0"
+        >
+          <img
+            src="assets/img/image.png"
+            alt="Logo"
+            style="height: 2em; margin-right: 8px"
+          />
+          <h1 class="sitename">IDS Activity Club</h1>
+          <span>.</span>
+        </a>
+
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="#hero" class="active">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#events">Events</a></li>
+            <li><a href="#guides">Guides</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+            <!-- <li id="profile-link" style="display:none;"><a href="#profile">Profile</a></li> -->
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+
+        <a id="login-btn" class="btn-getstarted" href="signin.html">Sign In</a>
+        <div id="profile-btn" class="btn-getstarted" style="display: none">
+          <a href="#">Profile</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="profile-info"></div>
+      </div>
+    </div>
+    <!-- Event Modal -->
+    <div id="events-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="events-modal-content"></div>
+      </div>
+    </div>
+
+    <!-- profile section script -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const profileBtn = document.getElementById("profile-btn");
+        const profileModal = document.getElementById("profile-modal");
+        const profileInfo = document.getElementById("profile-info");
+        const closeModal = document.querySelector("#profile-modal .close");
+        const eventsModal = document.getElementById("events-modal");
+        const eventsModalContent = document.getElementById(
+          "events-modal-content"
+        );
+        const closeEventsModal = document.querySelector("#events-modal .close");
+
+        const accessToken = localStorage.getItem("accessToken");
+        const userId = localStorage.getItem("userId");
+        const memberId = localStorage.getItem("memberId");
+
+        if (accessToken && userId && memberId) {
+          profileBtn.style.display = "block";
+        }
+
+        profileBtn.addEventListener("click", async (event) => {
+          event.preventDefault();
+          await fetchProfileInfo(userId, memberId);
+          profileModal.style.display = "block";
+        });
+
+        closeModal.onclick = () => {
+          profileModal.style.display = "none";
+        };
+        closeEventsModal.onclick = () => {
+          eventsModal.style.display = "none";
+        };
+
+        window.onclick = (event) => {
+          if (event.target === profileModal || event.target === eventsModal) {
+            profileModal.style.display = "none";
+            eventsModal.style.display = "none";
+          }
+        };
+
+        async function fetchProfileInfo(userId, memberId) {
+          try {
+            const userResponse = await fetch(
+              `https://localhost:7171/api/User/${userId}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            const memberResponse = await fetch(
+              `https://localhost:7171/api/Members/${memberId}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            if (!userResponse.ok || !memberResponse.ok) {
+              throw new Error("Failed to fetch profile information");
+            }
+
+            const user = await userResponse.json();
+            const member = await memberResponse.json();
+
+            const photoBlobUrl = convertBase64ToBlobUrl(member.photo);
+
+            profileInfo.innerHTML = `
+          <style>
+            .btn-getstarted {
+              background-color: #ffd700; /* Gold color */
+              color: #fff;
+              border: none;
+              padding: 10px 20px;
+              font-size: 16px;
+              font-family: 'Poppins', sans-serif;
+              border-radius: 5px;
+              cursor: pointer;
+              transition: background-color 0.3s, transform 0.3s;
+            }
+
+            .btn-getstarted:hover {
+              background-color: #ffca28; /* Lighter gold color */
+              transform: scale(1.05);
+            }
+
+            .modal-content {
+              padding: 20px;
+              border-radius: 10px;
+              box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              background-color: #fff;
+            }
+
+            .modal-content img {
+              width: 150px;
+              height: 150px;
+              border-radius: 50%;
+              border: 5px solid #ffd700; /* Yellow frame */
+              margin-bottom: 15px;
+            }
+
+            .modal-content h3 {
+              margin: 10px 0;
+              font-size: 24px;
+              color: #333;
+            }
+
+            .modal-content p {
+              margin: 5px 0;
+              font-size: 16px;
+              color: #555;
+            }
+
+            .modal-content p:not(:last-child) {
+              border-bottom: 1px solid #ddd; /* Separation lines */
+              padding-bottom: 10px;
+            }
+
+            .modal-content button {
+              display: block;
+              margin: 10px auto;
+            }
+          </style>
+          <img src="${photoBlobUrl}" alt="Profile Picture">
+          <h3>${user.name}</h3>
+          <p>Email: ${user.email}</p>
+          <p>Profession: ${member.profession}</p>
+          <p>Nationality: ${member.nationality}</p>
+          <button id="view-events-btn" class="btn-getstarted">View Events</button>
+          <button id="logout-btn" class="btn-getstarted">Logout</button>
+        `;
+
+            document.getElementById("view-events-btn").onclick = async () => {
+              await fetchMemberEvents(memberId);
+            };
+
+            document.getElementById("logout-btn").onclick = () => {
+              console.log("Logout button clicked");
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("userId");
+              localStorage.removeItem("memberId");
+
+              // Redirect to index.html
+              window.location.href = "index.html";
+            };
+
+            async function fetchMemberEvents(memberId) {
+              try {
+                const eventMemberResponse = await fetch(
+                  `https://localhost:7171/api/EventMember`,
+                  {
+                    method: "GET",
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+
+                if (!eventMemberResponse.ok) {
+                  throw new Error("Failed to fetch member events");
+                }
+
+                const events = await eventMemberResponse.json();
+
+                const memberEvents = events.filter(
+                  (em) => em.memberId === parseInt(memberId, 10)
+                );
+
+                if (memberEvents.length === 0) {
+                  alert("No events found for this member.");
+                  return;
+                }
+
+                // Clear previous content and fetch event details
+
+                for (const event of memberEvents) {
+                  await fetchEventDetails(event.eventId);
+                }
+                eventsModal.style.display = "block";
+              } catch (error) {
+                console.error(error);
+                alert("An error occurred while fetching member events.");
+              }
+            }
+
+            async function fetchEventDetails(eventId) {
+              try {
+                const eventResponse = await fetch(
+                  `https://localhost:7171/api/Events/${eventId}`,
+                  {
+                    method: "GET",
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+
+                if (!eventResponse.ok) {
+                  throw new Error("Failed to fetch event details");
+                }
+
+                const event = await eventResponse.json();
+                console.log(event);
+                displayEventInfo(event);
+              } catch (error) {
+                console.error(error);
+                alert("An error occurred while fetching event details.");
+              }
+            }
+
+            function displayEventInfo(event) {
+              eventsModalContent.innerHTML += `
+            <h2>${event.name}</h2>
+            <p>Description: ${event.description}</p>
+            <p>Date: ${event.dateFrom}</p>
+            <p>Date: ${event.dateTo}</p>
+            <p>Location: ${event.destination}</p>
+            <hr>
+          `;
+            }
+          } catch (error) {
+            console.error(error);
+            alert("An error occurred while fetching profile information.");
+          }
+        }
+
+        function convertBase64ToBlobUrl(base64String) {
+          // Decode the base64 string to binary data
+          const binaryString = atob(base64String);
+
+          // Create a Uint8Array from the binary string
+          const byteArray = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            byteArray[i] = binaryString.charCodeAt(i);
+          }
+
+          // Create a Blob from the Uint8Array
+          const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+          // Create a URL for the Blob
+          return URL.createObjectURL(blob);
+        }
+      });
+    </script>
+
+    <main class="main">
+      <!-- Hero Section -->
+      <section id="hero" class="hero section dark-background">
+        <img src="assets/img/hero-bg.jpg" alt="" data-aos="fade-in" />
+        <div class="container">
+          <div
+            class="row justify-content-center text-center"
+            data-aos="fade-up"
+            data-aos-delay="100"
+          >
+            <div class="col-xl-6 col-lg-8">
+              <h2>Connecting You to Adventures<span>.</span></h2>
+              <p>Discover, Join, and Experience with IDS Activity Club</p>
+            </div>
+          </div>
+          <div
+            class="row gy-4 mt-5 justify-content-center"
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            <div
+              class="col-xl-2 col-md-4"
+              data-aos="fade-up"
+              data-aos-delay="300"
+            >
+              <div class="icon-box">
+                <i class="bi bi-airplane"></i>
+                <h3><a href="">Traveling</a></h3>
+              </div>
+            </div>
+            <div
+              class="col-xl-2 col-md-4"
+              data-aos="fade-up"
+              data-aos-delay="400"
+            >
+              <div class="icon-box">
+                <i class="bi bi-compass"></i>
+                <h3><a href="">Hiking Trips</a></h3>
+              </div>
+            </div>
+            <div
+              class="col-xl-2 col-md-4"
+              data-aos="fade-up"
+              data-aos-delay="600"
+            >
+              <div class="icon-box">
+                <i class="bi bi-book"></i>
+                <h3><a href="">Educational Seminars</a></h3>
+              </div>
+            </div>
+            <div
+              class="col-xl-2 col-md-4"
+              data-aos="fade-up"
+              data-aos-delay="700"
+            >
+              <div class="icon-box">
+                <i class="bi bi-bicycle"></i>
+                <h3><a href="">Cycling Tours</a></h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- /Hero Section -->
+
+      <!-- About Section -->
+      <section id="about" class="about section">
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+          <div class="row gy-4">
+            <div class="col-lg-6 order-1 order-lg-2">
+              <img src="assets/img/about.jpg" class="img-fluid" alt="" />
+            </div>
+            <div class="col-lg-6 order-2 order-lg-1 content">
+              <h3 id="aboutWelcomeTitle">Welcome to IDS Activity Club!</h3>
+              <p id="aboutText" class="fst-italic">
+                At IDS Activity Club, we are passionate about bringing people
+                together through exciting and enriching experiences. Our club
+                offers a wide range of activities, from thrilling outdoor
+                adventures to educational seminars, designed to cater to diverse
+                interests and promote a vibrant community spirit.
+              </p>
+              <h3 id="aboutOfferTitle">What We Offer</h3>
+              <ul>
+                <li>
+                  <i class="bi bi-check2-all"></i>
+                  <span id="text1"
+                    >Adventurous Activities: Explore new horizons with our
+                    hiking trips, camping adventures, and cycling tours.</span
+                  >
+                </li>
+                <li>
+                  <i class="bi bi-check2-all"></i>
+                  <span id="text2"
+                    >Educational Seminars: Gain valuable insights and knowledge
+                    through our engaging seminars and workshops.</span
+                  >
+                </li>
+                <li>
+                  <i class="bi bi-check2-all"></i>
+                  <span id="text3"
+                    >Community Events: Join our regular events and become part
+                    of a dynamic community that values connection and
+                    growth.</span
+                  >
+                </li>
+              </ul>
+              <p id="text4">
+                Join us today and be part of a community that celebrates
+                exploration, learning, and fun!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- /About Section -->
+
+      <section id="events" class="events section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+          <h2>Events</h2>
+          <p>Check our Events</p>
+        </div>
+        <!-- End Section Title -->
+
+        <div class="container">
+          <div class="row gy-4" id="events-list">
+            <!-- Events will be dynamically added here -->
+          </div>
+        </div>
+      </section>
+      <!-- /Events Section -->
+
+      <!-- Event Modal -->
+      <div id="event-modal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div id="event-details"></div>
+        </div>
+      </div>
+
+      <!-- event section script -->
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const accessToken = localStorage.getItem("accessToken");
+          const userId = localStorage.getItem("userId");
+          const memberId = localStorage.getItem("memberId");
+          let events = [];
+
+          fetchEvents();
+
+          async function fetchEvents() {
+            try {
+              const response = await fetch(
+                "https://localhost:7171/api/Events/admin",
+                {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch events");
+              }
+
+              events = await response.json();
+              displayEvents(events);
+            } catch (error) {
+              console.error(error);
+              alert("An error occurred while fetching events.");
+            }
+          }
+
+          function displayEvents(events) {
+            const eventsList = document.getElementById("events-list");
+            eventsList.innerHTML = "";
+
+            events.forEach((event) => {
+              const eventElement = document.createElement("div");
+              eventElement.classList.add("col-lg-4", "col-md-6", "event-item");
+              eventElement.innerHTML = `
+              <div class="event" data-id="${event.eventId}">
+                <div class="details">
+                  <h3>${event.name}</h3>
+                  <p>${event.description}</p>
+                </div>
+              </div>
+            `;
+              eventElement.addEventListener("click", () =>
+                openEventModal(event.eventId)
+              );
+              eventsList.appendChild(eventElement);
+            });
+          }
+
+          function openEventModal(eventId) {
+            if (!accessToken) {
+              alert("You are not authorized. Please log in first.");
+              return;
+            }
+
+            const event = events.find((e) => e.eventId === eventId);
+
+            if (event) {
+              displayEventDetails(event);
+              document.getElementById("event-modal").style.display = "block";
+            } else {
+              alert("Event not found.");
+            }
+          }
+
+          function displayEventDetails(event) {
+            const eventDetails = document.getElementById("event-details");
+            eventDetails.innerHTML = `
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+              <h2 style="font-size: 24px; margin-bottom: 10px;">${event.name}</h2>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.description}</p>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.destination}</p>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.dateFrom}</p>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.dateTo}</p>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.status}</p>
+              <p style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">${event.cost}</p>
+              <button id="join-event" style="background-color: #ffca28; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; transition: background-color 0.3s;">
+                  Join Event
+              </button>
+            </div>
+          `;
+
+            document.getElementById("join-event").onclick = () =>
+              joinEvent(event.eventId);
+          }
+
+          async function joinEvent(eventId) {
+            try {
+              const response = await fetch(
+                "https://localhost:7171/api/EventMember",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    memberId: memberId,
+                    eventId: eventId,
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to join event");
+              }
+
+              alert("Successfully joined the event!");
+              document.getElementById("event-modal").style.display = "none";
+            } catch (error) {
+              console.error(error);
+              alert("An error occurred while joining the event.");
+            }
+          }
+
+          // Modal close functionality
+          const eventModal = document.getElementById("event-modal");
+          const closeEventModal = document.querySelector("#event-modal .close");
+
+          if (closeEventModal) {
+            closeEventModal.onclick = () => {
+              console.log("Closing event modal");
+              eventModal.style.display = "none";
+            };
+          }
+
+          window.onclick = (event) => {
+            if (event.target === eventModal) {
+              console.log("Closing event modal by clicking outside");
+              eventModal.style.display = "none";
+            }
+          };
+        });
+      </script>
+
+      <!-- Call To Action Section -->
+      <section
+        id="call-to-action"
+        class="call-to-action section dark-background"
+      >
+        <img src="assets/img/cta-bg.jpg" alt="" />
+
+        <div class="container">
+          <div
+            class="row justify-content-center"
+            data-aos="zoom-in"
+            data-aos-delay="100"
+          >
+            <div class="col-xl-10">
+              <div class="text-center">
+                <h3>What to Know More About IDS</h3>
+                <p>
+                  Integrated Digital Systems (IDS) is a software solutions
+                  provider delivering full cycle software development services
+                  and products since 1991.
+                </p>
+                <a
+                  href="IDS_Company_Profile_2023.pdf"
+                  download
+                  class="download-btn"
+                  >Download PDF</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- /Call To Action Section -->
+
+      <!-- Portfolio Section -->
+      <section id="portfolio" class="portfolio section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+          <h2>Portfolio</h2>
+          <p>Check our Portfolio</p>
+        </div>
+        <!-- End Section Title -->
+
+        <div class="container">
+          <div
+            class="isotope-layout"
+            data-default-filter="*"
+            data-layout="masonry"
+            data-sort="original-order"
+          >
+            <ul
+              class="portfolio-filters isotope-filters"
+              data-aos="fade-up"
+              data-aos-delay="100"
+            >
+              <li data-filter="*" class="filter-active">All</li>
+              <li data-filter=".filter-app">App</li>
+              <li data-filter=".filter-product">Card</li>
+              <li data-filter=".filter-branding">Web</li>
+            </ul>
+            <!-- End Portfolio Filters -->
+
+            <div
+              class="row gy-4 isotope-container"
+              data-aos="fade-up"
+              data-aos-delay="200"
+              id="portfolioContainer"
+            >
+              <!-- Portfolio items will be dynamically added here -->
+            </div>
+            <!-- End Portfolio Container -->
+          </div>
+        </div>
+
+        <script>
+          async function fetchLookups() {
+            try {
+              const response = await fetch(
+                "https://localhost:7171/api/Lookups",
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem(
+                      "accessToken"
+                    )}`,
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const lookups = await response.json();
+                populatePortfolioImages(lookups);
+              } else {
+                console.error("Failed to fetch lookups");
+              }
+            } catch (error) {
+              console.error("Error fetching lookups:", error);
+            }
+          }
+
+          function populatePortfolioImages(lookups) {
+            const portfolioContainer =
+              document.getElementById("portfolioContainer");
+            portfolioContainer.innerHTML = "";
+
+            lookups.forEach((lookup) => {
+              if (lookup.code) {
+                const portfolioItem = document.createElement("div");
+                portfolioItem.classList.add(
+                  "col-lg-4",
+                  "col-md-6",
+                  "portfolio-item",
+                  "isotope-item"
+                );
+
+                // Determine the filter class based on some attribute (e.g., lookup.category)
+                let filterClass = "filter-app"; // Example filter class, change based on your logic
+                if (lookup.category === "Card") {
+                  filterClass = "filter-product";
+                } else if (lookup.category === "Web") {
+                  filterClass = "filter-branding";
+                }
+
+                portfolioItem.classList.add(filterClass);
+
+                portfolioItem.innerHTML = `
+                  <img src="Images/${lookup.code}" class="img-fluid" alt="${
+                  lookup.name || "Lookup Image"
+                }" />
+                  <div class="portfolio-info">
+                    <h4>${lookup.name}</h4>
+                    <p>${lookup.description || "No description"}</p>
+                    <a href="Images/${lookup.code}" title="${
+                  lookup.name
+                }" data-gallery="portfolio-gallery" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                    <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+                  </div>
+                `;
+
+                portfolioContainer.appendChild(portfolioItem);
+              }
+            });
+          }
+
+          // Fetch lookups on page load
+          fetchLookups();
+        </script>
+        <!-- End Portfolio Item -->
+      </section>
+
+      <!-- /Portfolio Section -->
+
+      <!-- Testimonials Section -->
+      <section id="testimonials" class="testimonials section dark-background">
+        <img
+          src="assets/img/testimonials-bg.jpg"
+          class="testimonials-bg"
+          alt=""
+        />
+
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+          <div class="swiper init-swiper">
+            <script type="application/json" class="swiper-config">
+              {
+                "loop": true,
+                "speed": 600,
+                "autoplay": {
+                  "delay": 5000
+                },
+                "slidesPerView": "auto",
+                "pagination": {
+                  "el": ".swiper-pagination",
+                  "type": "bullets",
+                  "clickable": true
+                }
+              }
+            </script>
+            <div class="swiper-wrapper">
+              <div class="swiper-slide">
+                <div class="testimonial-item">
+                  <img
+                    src="assets/img/testimonials/testimonials-1.jpg"
+                    class="testimonial-img"
+                    alt=""
+                  />
+                  <h3>Saul Goodman</h3>
+                  <h4>Ceo &amp; Founder</h4>
+                  <div class="stars">
+                    <i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i>
+                  </div>
+                  <p>
+                    <i class="bi bi-quote quote-icon-left"></i>
+                    <span
+                      >Proin iaculis purus consequat sem cure digni ssim donec
+                      porttitora entum suscipit rhoncus. Accusantium quam,
+                      ultricies eget id, aliquam eget nibh et. Maecen aliquam,
+                      risus at semper.</span
+                    >
+                    <i class="bi bi-quote quote-icon-right"></i>
+                  </p>
+                </div>
+              </div>
+              <!-- End testimonial item -->
+
+              <div class="swiper-slide">
+                <div class="testimonial-item">
+                  <img
+                    src="assets/img/testimonials/testimonials-2.jpg"
+                    class="testimonial-img"
+                    alt=""
+                  />
+                  <h3>Sara Wilsson</h3>
+                  <h4>Designer</h4>
+                  <div class="stars">
+                    <i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i>
+                  </div>
+                  <p>
+                    <i class="bi bi-quote quote-icon-left"></i>
+                    <span
+                      >Export tempor illum tamen malis malis eram quae irure
+                      esse labore quem cillum quid cillum eram malis quorum
+                      velit fore eram velit sunt aliqua noster fugiat irure amet
+                      legam anim culpa.</span
+                    >
+                    <i class="bi bi-quote quote-icon-right"></i>
+                  </p>
+                </div>
+              </div>
+              <!-- End testimonial item -->
+
+              <div class="swiper-slide">
+                <div class="testimonial-item">
+                  <img
+                    src="assets/img/testimonials/testimonials-3.jpg"
+                    class="testimonial-img"
+                    alt=""
+                  />
+                  <h3>Jena Karlis</h3>
+                  <h4>Store Owner</h4>
+                  <div class="stars">
+                    <i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i>
+                  </div>
+                  <p>
+                    <i class="bi bi-quote quote-icon-left"></i>
+                    <span
+                      >Enim nisi quem export duis labore cillum quae magna enim
+                      sint quorum nulla quem veniam duis minim tempor labore
+                      quem eram duis noster aute amet eram fore quis sint
+                      minim.</span
+                    >
+                    <i class="bi bi-quote quote-icon-right"></i>
+                  </p>
+                </div>
+              </div>
+              <!-- End testimonial item -->
+
+              <div class="swiper-slide">
+                <div class="testimonial-item">
+                  <img
+                    src="assets/img/testimonials/testimonials-4.jpg"
+                    class="testimonial-img"
+                    alt=""
+                  />
+                  <h3>Matt Brandon</h3>
+                  <h4>Freelancer</h4>
+                  <div class="stars">
+                    <i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i>
+                  </div>
+                  <p>
+                    <i class="bi bi-quote quote-icon-left"></i>
+                    <span
+                      >Fugiat enim eram quae cillum dolore dolor amet nulla
+                      culpa multos export minim fugiat minim velit minim dolor
+                      enim duis veniam ipsum anim magna sunt elit fore quem
+                      dolore labore illum veniam.</span
+                    >
+                    <i class="bi bi-quote quote-icon-right"></i>
+                  </p>
+                </div>
+              </div>
+              <!-- End testimonial item -->
+
+              <div class="swiper-slide">
+                <div class="testimonial-item">
+                  <img
+                    src="assets/img/testimonials/testimonials-5.jpg"
+                    class="testimonial-img"
+                    alt=""
+                  />
+                  <h3>John Larson</h3>
+                  <h4>Entrepreneur</h4>
+                  <div class="stars">
+                    <i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i
+                    ><i class="bi bi-star-fill"></i>
+                  </div>
+                  <p>
+                    <i class="bi bi-quote quote-icon-left"></i>
+                    <span
+                      >Quis quorum aliqua sint quem legam fore sunt eram irure
+                      aliqua veniam tempor noster veniam enim culpa labore duis
+                      sunt culpa nulla illum cillum fugiat legam esse veniam
+                      culpa fore nisi cillum quid.</span
+                    >
+                    <i class="bi bi-quote quote-icon-right"></i>
+                  </p>
+                </div>
+              </div>
+              <!-- End testimonial item -->
+            </div>
+            <div class="swiper-pagination"></div>
+          </div>
+        </div>
+      </section>
+      <!-- /Testimonials Section -->
+
+      <!-- the guides section  -->
+
+      <section id="guides" class="team section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+          <h2>Team</h2>
+          <p>Our Team</p>
+        </div>
+        <!-- End Section Title -->
+
+        <div class="container">
+          <div class="row gy-4" id="team-list">
+            <!-- Team members will be dynamically added here -->
+          </div>
+        </div>
+      </section>
+      <!-- /Team Section -->
+
+      <!-- Include your JS files here -->
+      <!-- the guides section script  -->
+      <script>
+        document.addEventListener("DOMContentLoaded", (event) => {
+          const accessToken = localStorage.getItem("accessToken");
+
+          fetchGuides();
+
+          async function fetchGuides() {
+            try {
+              const response = await fetch(
+                "https://localhost:7171/api/Guides",
+                {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch guides");
+              }
+
+              const guides = await response.json();
+              displayGuides(guides);
+            } catch (error) {
+              console.error(error);
+              alert("An error occurred while fetching guides.");
+            }
+          }
+
+          function displayGuides(guides) {
+            const teamList = document.getElementById("team-list");
+            teamList.innerHTML = "";
+
+            guides.forEach((guide) => {
+              const guideElement = document.createElement("div");
+              guideElement.classList.add(
+                "col-lg-3",
+                "col-md-6",
+                "d-flex",
+                "align-items-stretch"
+              );
+              guideElement.setAttribute("data-aos", "fade-up");
+              guideElement.innerHTML = `
+              <div class="team-member">
+                <div class="member-img">
+                  <img src="${convertBase64ToBlobUrl(
+                    guide.photo
+                  )}" class="img-fluid" alt="${guide.userId}">
+                  
+                  <div class="social">
+                    <a href=""><i class="bi bi-twitter"></i></a>
+                    <a href=""><i class="bi bi-facebook"></i></a>
+                    <a href=""><i class="bi bi-instagram"></i></a>
+                    <a href=""><i class="bi bi-linkedin"></i></a>
+                  </div>
+                </div>
+                <div class="member-info">
+                  <h4>${guide.profession}</h4>
+                  <span>${guide.userId}</span>
+                </div>
+              </div>
+            `;
+              teamList.appendChild(guideElement);
+            });
+          }
+
+          // Commenting out the convertHexToBlobUrl function
+          function convertBase64ToBlobUrl(base64String) {
+            // Decode the base64 string to binary data
+            const binaryString = atob(base64String);
+
+            // Create a Uint8Array from the binary string
+            const byteArray = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              byteArray[i] = binaryString.charCodeAt(i);
+            }
+
+            // Create a Blob from the Uint8Array
+            const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+            // Create a URL for the Blob
+            return URL.createObjectURL(blob);
+          }
+        });
+      </script>
+
+      <!-- Contact Section -->
+      <section id="contact" class="contact section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+          <h2>Contact</h2>
+          <p>Contact Us</p>
+        </div>
+        <!-- End Section Title -->
+
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+          <div class="mb-4" data-aos="fade-up" data-aos-delay="200">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3313.185322245345!2d35.489771375168516!3d33.85911452790434!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151f17590c14bb71%3A0x3b8d8d5c7ae043d!2sIntegrated%20Digital%20Systems%20(IDS)!5e0!3m2!1sen!2slb!4v1722264135136!5m2!1sen!2slb"
+              style="border: 0; width: 100%; height: 450px"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            >
+            </iframe>
+          </div>
+          <!-- End Google Maps -->
+
+          <div class="row gy-4">
+            <div class="col-lg-4">
+              <div
+                class="info-item d-flex"
+                data-aos="fade-up"
+                data-aos-delay="300"
+              >
+                <i class="bi bi-geo-alt flex-shrink-0"></i>
+                <div>
+                  <h3>Address</h3>
+                  <p>
+                    Bir Hasan, United Nations Street.، Al Zahraa Building.
+                    Ground Floor،, Beirut
+                  </p>
+                </div>
+              </div>
+              <!-- End Info Item -->
+
+              <div
+                class="info-item d-flex"
+                data-aos="fade-up"
+                data-aos-delay="400"
+              >
+                <i class="bi bi-telephone flex-shrink-0"></i>
+                <div>
+                  <h3>Call Us</h3>
+                  <p>+961 1 859 501</p>
+                </div>
+              </div>
+              <!-- End Info Item -->
+
+              <div
+                class="info-item d-flex"
+                data-aos="fade-up"
+                data-aos-delay="500"
+              >
+                <i class="bi bi-envelope flex-shrink-0"></i>
+                <div>
+                  <h3>Email Us</h3>
+                  <p>info@ids.com</p>
+                </div>
+              </div>
+              <!-- End Info Item -->
+            </div>
+
+            <div class="col-lg-8">
+              <form
+                action="forms/contact.php"
+                method="post"
+                class="php-email-form"
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <div class="row gy-4">
+                  <div class="col-md-6">
+                    <input
+                      type="text"
+                      name="name"
+                      class="form-control"
+                      placeholder="Your Name"
+                      required=""
+                    />
+                  </div>
+
+                  <div class="col-md-6">
+                    <input
+                      type="email"
+                      class="form-control"
+                      name="email"
+                      placeholder="Your Email"
+                      required=""
+                    />
+                  </div>
+
+                  <div class="col-md-12">
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="subject"
+                      placeholder="Subject"
+                      required=""
+                    />
+                  </div>
+
+                  <div class="col-md-12">
+                    <textarea
+                      class="form-control"
+                      name="message"
+                      rows="6"
+                      placeholder="Message"
+                      required=""
+                    ></textarea>
+                  </div>
+
+                  <div class="col-md-12 text-center">
+                    <div class="loading">Loading</div>
+                    <div class="error-message"></div>
+                    <div class="sent-message">
+                      Your message has been sent. Thank you!
+                    </div>
+
+                    <button type="submit">Send Message</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <!-- End Contact Form -->
+          </div>
+        </div>
+      </section>
+      <!-- /Contact Section -->
+    </main>
+
+    <footer id="footer" class="footer dark-background">
+      <div class="footer-top">
+        <div class="container">
+          <div class="row gy-4">
+            <div class="col-lg-4 col-md-6 footer-about">
+              <a href="index.html" class="logo d-flex align-items-center">
+                <span class="sitename">IDS</span>
+              </a>
+              <div class="footer-contact pt-3">
+                <p>
+                  Bir Hasan, United Nations Street.، Al Zahraa Building. Ground
+                  Floor،
+                </p>
+                <p>Beirut</p>
+                <p class="mt-3">
+                  <strong>Phone:</strong> <span>+961 1 859 501</span>
+                </p>
+                <p><strong>Email:</strong> <span>info@ids.com</span></p>
+              </div>
+              <div class="social-links d-flex mt-4">
+                <a href=""><i class="bi bi-twitter-x"></i></a>
+                <a href=""><i class="bi bi-facebook"></i></a>
+                <a href=""><i class="bi bi-instagram"></i></a>
+                <a href=""><i class="bi bi-linkedin"></i></a>
+              </div>
+            </div>
+
+            <div class="col-lg-2 col-md-3 footer-links">
+              <h4>Useful Links</h4>
+              <ul>
+                <li>
+                  <i class="bi bi-chevron-right"></i> <a href="#"> Home</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i> <a href="#"> About us</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i> <a href="#"> Events</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i> <a href="#"> Guides</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="col-lg-2 col-md-3 footer-links">
+              <h4>IDS Services</h4>
+              <ul>
+                <li>
+                  <i class="bi bi-chevron-right"></i>
+                  <a href="#"> Web Design</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i>
+                  <a href="#"> Web Development</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i>
+                  <a href="#"> Product Management</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i> <a href="#"> Marketing</a>
+                </li>
+                <li>
+                  <i class="bi bi-chevron-right"></i>
+                  <a href="#"> Graphic Design</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="col-lg-4 col-md-12 footer-newsletter">
+              <h4>Our Newsletter</h4>
+              <p>
+                Subscribe to our newsletter and receive the latest news about
+                our products and services!
+              </p>
+              <form
+                action="forms/newsletter.php"
+                method="post"
+                class="php-email-form"
+              >
+                <div class="newsletter-form">
+                  <input type="email" name="email" /><input
+                    type="submit"
+                    value="Subscribe"
+                  />
+                </div>
+                <div class="loading">Loading</div>
+                <div class="error-message"></div>
+                <div class="sent-message">
+                  Your subscription request has been sent. Thank you!
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="copyright">
+        <div class="container text-center">
+          <p>
+            © <span>Copyright © 2024</span>
+            <strong class="px-1 sitename">IDS</strong>
+            <span>All Rights Reserved</span>
+          </p>
+          <div class="credits">
+            Designed by
+            <a href="https://www.ids.com.lb/"
+              >Integrated Digital Systems - IDS</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scroll Top -->
+    <a
+      href="#"
+      id="scroll-top"
+      class="scroll-top d-flex align-items-center justify-content-center"
+      ><i class="bi bi-arrow-up-short"></i
+    ></a>
+
+    <!-- Preloader -->
+    <div id="preloader"></div>
+
+    <!-- Vendor JS Files -->
+    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/php-email-form/validate.js"></script>
+    <script src="assets/vendor/aos/aos.js"></script>
+    <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+    <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+    <script src="assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+    <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+    <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>

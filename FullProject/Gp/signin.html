@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In</title>
+    <style>
+      /* General Styles */
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        color: #333;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        position: relative;
+      }
+
+      .container {
+        position: relative;
+        z-index: 2;
+        max-width: 400px;
+        width: 100%;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        text-align: center;
+      }
+
+      .form-container {
+        text-align: center;
+      }
+
+      input[type="email"],
+      input[type="password"],
+      button {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+
+      button {
+        background-color: #f7d30f; /* Yellow color */
+        border: none;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #f5c600;
+      }
+
+      p {
+        margin-top: 10px;
+      }
+
+      a {
+        color: #f7d30f;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* Background Image Styles */
+      .background-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("assets/img/hero-bg.jpg");
+        background-size: cover;
+        background-position: center;
+        filter: blur(5px); /* Adjust the blur amount as needed */
+        z-index: 1;
+      }
+    </style>
+  </head>
+
+  <body class="sign-in-page">
+    <div class="background-image"></div>
+    <div class="container">
+      <div class="form-container">
+        <h2>Sign In</h2>
+        <form id="signInForm">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Password"
+            required
+          />
+          <button type="submit" id="submitButton">Sign In</button>
+          <p>Don't Have an Account? <a href="signup.html">Sign Up</a></p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("signInForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Prevent default form submission
+
+          // Get email and password values
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          if (email === "admin@admin" && password === "admin") {
+            window.location.href = "http://127.0.0.1:5500/adminLogin.html";
+          } else {
+            try {
+              // Call the API to validate the credentials
+              const response = await fetch("https://localhost:7171/login", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+              });
+
+              if (!response.ok) {
+                // Handle HTTP errors
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
+              const data = await response.json();
+
+              if (data.accessToken) {
+                // Store the access token
+                localStorage.setItem("accessToken", data.accessToken);
+
+                // Call function to get userId and memberId
+                await getUserAndMemberIds(email);
+
+                // Redirect to index.html on successful login
+                window.location.href = "index.html";
+              } else {
+                // Display error message from the response
+                alert(data.message || "Invalid email or password");
+              }
+            } catch (error) {
+              // Log and display error details
+              console.error("Error during login:", error);
+              alert("An error occurred: " + error.message);
+            }
+          }
+        });
+
+      async function getUserAndMemberIds(email) {
+        const accessToken = localStorage.getItem("accessToken");
+
+        try {
+          // Fetch all users
+          const usersResponse = await fetch("https://localhost:7171/api/User", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!usersResponse.ok) {
+            throw new Error("Failed to fetch users");
+          }
+
+          const users = await usersResponse.json();
+          const user = users.find((u) => u.email === email);
+
+          if (!user) {
+            throw new Error("User not found");
+          }
+
+          // Store userId in localStorage
+          localStorage.setItem("userId", user.userId);
+
+          // Fetch all members
+          const membersResponse = await fetch(
+            "https://localhost:7171/api/Members",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!membersResponse.ok) {
+            throw new Error("Failed to fetch members");
+          }
+
+          const membersText = await membersResponse.text();
+          const members = JSON.parse(membersText);
+          const member = members.find((m) => m.userId === user.userId);
+          const memberId = member["memberId"];
+
+          if (!member) {
+            throw new Error("Member not found");
+          }
+
+          // Store memberId in localStorage
+          localStorage.setItem("memberId", memberId);
+        } catch (error) {
+          console.error("Error fetching user or member details:", error);
+          alert(
+            "An error occurred while fetching profile details: " + error.message
+          );
+        }
+      }
+    </script>
+  </body>
+</html>

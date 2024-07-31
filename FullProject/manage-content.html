@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lookup Images</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+      }
+      .image-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+      }
+      .image-container img {
+        max-width: 200px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      #back {
+        padding: 10px;
+        margin-top: 100px;
+        border: none;
+        border-radius: 4px;
+        background-color: #ee2020;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-right: 100px;
+      }
+      .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .form-container label {
+        font-weight: bold;
+      }
+      .form-container input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 300px;
+      }
+      .form-container button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background-color: #32da4b;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        width: 100px;
+        align-self: center;
+      }
+      .form-container button:hover {
+        background-color: #12653b;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Lookup Images</h1>
+
+    <div class="image-container" id="imageContainer">
+      <!-- Images will be populated here -->
+    </div>
+
+    <a href="admin-dashboard.html" id="back">Back to Dashboard</a>
+
+    <script>
+      async function fetchLookups() {
+        try {
+          const response = await fetch("https://localhost:7171/api/Lookups", {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          });
+
+          if (response.ok) {
+            const lookups = await response.json();
+            populateImages(lookups);
+          } else {
+            console.error("Failed to fetch lookups");
+          }
+        } catch (error) {
+          console.error("Error fetching lookups:", error);
+        }
+      }
+
+      function populateImages(lookups) {
+        const imageContainer = document.getElementById("imageContainer");
+        imageContainer.innerHTML = "";
+
+        lookups.forEach((lookup) => {
+          if (lookup.code) {
+            const img = document.createElement("img");
+            img.src = "Gp/Images/" + lookup.code;
+            img.alt = lookup.name || "Lookup Image";
+            imageContainer.appendChild(img);
+          }
+        });
+      }
+
+      // Fetch lookups on page load
+      fetchLookups();
+    </script>
+  </body>
+</html>
